@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:handwriting_recognizer/data/model/text_file.dart';
 import 'package:handwriting_recognizer/pages/home.dart';
 import 'package:handwriting_recognizer/pages/splash.dart';
+import 'package:handwriting_recognizer/pages/text_editor.dart';
 import 'package:handwriting_recognizer/provider/appprovider.dart';
 import 'package:handwriting_recognizer/provider/fileprovider.dart';
 import 'package:provider/provider.dart';

@@ -1,12 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:handwriting_recognizer/data/model/text_file.dart';
+import 'package:handwriting_recognizer/pages/text_editor.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
 
 class ScannerPage extends StatefulWidget {
-  const ScannerPage({super.key, required this.image});
+  const ScannerPage(
+      {super.key,
+      required this.image,
+     });
 
   final File image;
 
@@ -15,6 +20,11 @@ class ScannerPage extends StatefulWidget {
 }
 
 class _ScannerPageState extends State<ScannerPage> {
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   changeBase64() async {
     Uint8List imageBytes = await widget.image.readAsBytes();
     if (kDebugMode) {
@@ -26,7 +36,7 @@ class _ScannerPageState extends State<ScannerPage> {
     }
   }
 
-  byteStream() async {
+  Future<String> byteStream() async {
     var uri = Uri.parse('http://192.168.1.9:5000/detecttxt');
     var request = http.MultipartRequest("POST", uri);
     Map<String, String> headers = {"Content-type": "multipart/form-data"};
@@ -44,9 +54,13 @@ class _ScannerPageState extends State<ScannerPage> {
       print("request: $request");
     }
     var res = await request.send();
+
+    String response = jsonDecode(await res.stream.bytesToString());
     if (kDebugMode) {
-      print(res);
+      print(response);
     }
+
+    return response;
 
     // print(widget.image.readAsBytes().asStream());
   }
@@ -63,9 +77,11 @@ class _ScannerPageState extends State<ScannerPage> {
               Image.file(widget.image),
               // Image.memory(base64Decode()),
               ElevatedButton.icon(
-                onPressed: () {
+                onPressed: () async {
                   // changeBase64();
-                  byteStream();
+                  String result = await byteStream();
+                  print(result);
+                  Navigator.pop(context, result);
                 },
                 icon: const Icon(
                   Icons.arrow_forward,

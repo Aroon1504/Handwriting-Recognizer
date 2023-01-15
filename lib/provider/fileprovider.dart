@@ -51,14 +51,12 @@ class Fileprovider with ChangeNotifier {
 
   Fileprovider.initialize() {
     loadTextFiles();
-    Timer(const Duration(seconds: 3), () {
-      _status = Status.Loaded;
-      notifyListeners();
-    });
+    _status = Status.Loaded;
+    notifyListeners();
   }
 
   reloadTextFiles() async {
-    loadTextFiles();
+    await loadTextFiles();
     print("Reload");
   }
 
@@ -104,6 +102,18 @@ class Fileprovider with ChangeNotifier {
   Future<bool> save(TextFileModel textFileModel) async {
     try {
       await _fileServices.insert(textFileModel);
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print("The Error ${e.toString()}");
+      }
+      return false;
+    }
+  }
+
+  Future<bool> delete(TextFileModel textFileModel) async {
+    try {
+      await _fileServices.delete(textFileModel);
       return true;
     } catch (e) {
       if (kDebugMode) {
