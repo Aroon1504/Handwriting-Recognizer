@@ -7,6 +7,7 @@ import 'package:handwriting_recognizer/data/model/text_file.dart';
 import 'package:handwriting_recognizer/pages/text_editor.dart';
 import 'package:handwriting_recognizer/provider/fileprovider.dart';
 import 'package:provider/provider.dart';
+import 'package:sizer/sizer.dart';
 
 import '../provider/appprovider.dart';
 
@@ -51,14 +52,38 @@ class TextFileCard extends StatelessWidget {
               const SizedBox(
                 width: 20,
               ),
-              Text(textFileModel.name),
+              SizedBox(
+                width: 150,
+                child: Text(
+                  textFileModel.name,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               const Spacer(),
               IconButton(
                 onPressed: () async {
-                  appProvider.changeIsLoading();
-                  await fileProvider.delete(textFileModel);
-                  await fileProvider.reloadTextFiles();
-                  appProvider.changeIsLoading();
+                  showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                              title: Text(
+                                  "Do you want to delete ${textFileModel.name}"),
+                              actions: [
+                                TextButton(
+                                    onPressed: () async {
+                                      appProvider.changeIsLoading();
+                                      await fileProvider.delete(textFileModel);
+                                      await fileProvider.reloadTextFiles();
+                                      appProvider.changeIsLoading();
+                                      // ignore: use_build_context_synchronously
+                                      popScreen(context);
+                                    },
+                                    child: Text("Yes")),
+                                TextButton(
+                                    onPressed: () {
+                                      popScreen(context);
+                                    },
+                                    child: Text("No"))
+                              ]));
                 },
                 icon: const Icon(
                   Icons.delete_outline,

@@ -1,7 +1,6 @@
 // ignore_for_file: import_of_legacy_library_into_null_safe
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:document_scanner_flutter/configs/configs.dart';
@@ -30,7 +29,6 @@ class TextEditor extends StatefulWidget {
 }
 
 class _TextEditorState extends State<TextEditor> {
-  Timer? _debounce;
   _TextEditorState(TextFileModel textFileModel, toInsert) {
     // Content of the document
     if (textFileModel.content.isEmpty) {
@@ -75,6 +73,50 @@ class _TextEditorState extends State<TextEditor> {
     // var convertedValue = jsonEncode(quillDoc.toDelta().toJson());
     final appProvider = Provider.of<AppProvider>(context);
     final fileProvider = Provider.of<Fileprovider>(context);
+
+    void showTextDialogBox() {
+      showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+                title: TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: orange))),
+                  // onChanged: (value) async {
+                  //   print(value);
+                  //   appProvider.changeIsLoading();
+                  //   await updateTitle(fileProvider, value);
+                  //   appProvider.changeIsLoading();
+                  // },
+                  // onSubmitted: (value) => updateTitle(fileProvider, value),
+                ),
+                actions: [
+                  IconButton(
+                      onPressed: () {
+                        popScreen(context);
+                      },
+                      hoverColor: red,
+                      icon: const Icon(
+                        Icons.close,
+                      )),
+                  IconButton(
+                      onPressed: () async {
+                        appProvider.changeIsLoading();
+                        await updateTitle(fileProvider, titleController.text);
+                        appProvider.changeIsLoading();
+                        // ignore: use_build_context_synchronously
+                        popScreen(context);
+                      },
+                      hoverColor: greenAccent,
+                      icon: const Icon(
+                        Icons.done,
+                      ))
+                ],
+              ));
+    }
+
     showDialogBox() {
       showDialog(
           context: context,
@@ -86,7 +128,9 @@ class _TextEditorState extends State<TextEditor> {
                   TextButton(
                       onPressed: () async {
                         await updateContent(fileProvider);
+                        // ignore: use_build_context_synchronously
                         popScreen(context);
+                        // ignore: use_build_context_synchronously
                         popScreen(context);
                       },
                       child: const Text("Yes")),
@@ -134,21 +178,16 @@ class _TextEditorState extends State<TextEditor> {
                 )
               ],
               title: SizedBox(
-                height: 30,
-                child: TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: orange))),
-                  onChanged: (value) async {
-                    print(value);
-                    appProvider.changeIsLoading();
-                    await updateTitle(fileProvider, value);
-                    appProvider.changeIsLoading();
-                  },
-                  onSubmitted: (value) => updateTitle(fileProvider, value),
-                ),
+                height: 35,
+                child: TextButton(
+                    onPressed: () {
+                      showTextDialogBox();
+                    },
+                    child: Text(
+                      titleController.text,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: black),
+                    )),
               ),
               bottom: PreferredSize(
                 preferredSize: const Size.fromHeight(1),
@@ -193,8 +232,8 @@ class _TextEditorState extends State<TextEditor> {
                             }
 
                             var index = _controller.selection.baseOffset;
-                            // ignore: use_build_context_synchronously
                             String navigatorResult =
+                                // ignore: use_build_context_synchronously
                                 await changeScreenWithResult(
                                     context,
                                     ScannerPage(
@@ -224,8 +263,9 @@ class _TextEditorState extends State<TextEditor> {
                             }
 
                             var index = _controller.selection.baseOffset;
-                            // ignore: use_build_context_synchronously
+
                             String navigatorResult =
+                                // ignore: use_build_context_synchronously
                                 await changeScreenWithResult(
                                     context,
                                     ScannerPage(

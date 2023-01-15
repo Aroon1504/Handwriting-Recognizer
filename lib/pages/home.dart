@@ -35,10 +35,10 @@ class _MyHomePageState extends State<MyHomePage> {
     final fileProvider = Provider.of<Fileprovider>(context);
     final appProvider = Provider.of<AppProvider>(context);
 
-    void createFile() async {
+    void createFile(String navigationResult) async {
       // TimeStamp
       var timestamp = DateTime.now().millisecondsSinceEpoch;
-      TextEditingController _titleController =
+      TextEditingController titleController =
           TextEditingController(text: "file$timestamp");
       showDialog(
           context: context,
@@ -46,7 +46,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 title: const Text("Save changes"),
                 content: TextField(
                   onChanged: (value) {},
-                  controller: _titleController,
+                  controller: titleController,
                 ),
                 actions: [
                   TextButton(
@@ -57,16 +57,17 @@ class _MyHomePageState extends State<MyHomePage> {
                         Directory? dir = await getExternalStorageDirectory();
 
                         // Creating File
-                        File file = File("${dir?.path}/file$timestamp.txt");
+                        File file =
+                            File("${dir?.path}/${titleController.text}.txt");
 
                         // Writing Text
                         file.writeAsString("");
 
                         // Creating new Instance of TextFileModel
                         TextFileModel textFileModel = TextFileModel(
-                            name: 'file$timestamp',
+                            name: titleController.text,
                             createdAt: DateTime.now().microsecondsSinceEpoch,
-                            path: "${dir?.path}/file$timestamp.txt",
+                            path: "${dir?.path}/${titleController.text}.txt",
                             content: quill.Delta());
 
                         // Saving new textFileModel
@@ -84,7 +85,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             context,
                             TextEditor(
                               textFileModel: textFileModel,
-                              toInsert: "",
+                              toInsert: navigationResult,
                             ));
                       },
                       child: const Text("Yes")),
@@ -122,34 +123,6 @@ class _MyHomePageState extends State<MyHomePage> {
               child: FloatingActionButton(
                 heroTag: "btn1",
                 onPressed: () async {
-                  appProvider.changeIsLoading();
-
-                  // Getting Directory
-                  Directory? dir = await getExternalStorageDirectory();
-
-                  // TimeStamp
-                  var timestamp = DateTime.now().millisecondsSinceEpoch;
-
-                  // Creating File
-                  File file = File("${dir?.path}/file$timestamp.txt");
-
-                  // Writing Text
-                  file.writeAsString("");
-
-                  // Creating new Instance of TextFileModel
-                  TextFileModel textFileModel = TextFileModel(
-                      name: 'file$timestamp',
-                      createdAt: DateTime.now().microsecondsSinceEpoch,
-                      path: "${dir?.path}/file$timestamp.txt",
-                      content: quill.Delta());
-
-                  // Saving new textFileModel
-                  await fileProvider.save(textFileModel);
-
-                  // Reload
-                  await fileProvider.reloadTextFiles();
-
-                  appProvider.changeIsLoading();
                   try {
                     // ignore: use_build_context_synchronously
                     File? scannedDoc = await DocumentScannerFlutter.launch(
@@ -157,23 +130,23 @@ class _MyHomePageState extends State<MyHomePage> {
                         source: ScannerFileSource
                             .CAMERA); // Or ScannerFileSource.GALLERY
                     // `scannedDoc` will be the image file scanned from scanner
-                    late File image;
+                    File? image;
                     if (scannedDoc != null) {
                       image = scannedDoc;
                     }
+                    var navigatorResult;
 
                     if (image != null) {
-                      
                       // ignore: use_build_context_synchronously
-                      String navigatorResult = await changeScreenWithResult(
+                      navigatorResult = await changeScreenWithResult(
                           context,
                           ScannerPage(
                             image: image,
                           ));
 
-                          if(navigatorResult!=null){
-                            createFile();
-                          }
+                      if (navigatorResult != null) {
+                        createFile(navigatorResult);
+                      }
 
                       // // ignore: use_build_context_synchronously
                       // changeScreen(
@@ -188,14 +161,59 @@ class _MyHomePageState extends State<MyHomePage> {
                   }
                 },
                 child: Icon(Icons.camera_alt),
+              )),
+
+          Container(
+              margin: const EdgeInsets.all(10),
+              child: FloatingActionButton(
+                heroTag: "btn3",
+                onPressed: () async {
+                  try {
+                    // ignore: use_build_context_synchronously
+                    File? scannedDoc = await DocumentScannerFlutter.launch(
+                        context,
+                        source: ScannerFileSource
+                            .GALLERY); // Or ScannerFileSource.GALLERY
+                    // `scannedDoc` will be the image file scanned from scanner
+                    File? image;
+                    if (scannedDoc != null) {
+                      image = scannedDoc;
+                    }
+                    var navigatorResult;
+
+                    if (image != null) {
+                      // ignore: use_build_context_synchronously
+                      navigatorResult = await changeScreenWithResult(
+                          context,
+                          ScannerPage(
+                            image: image,
+                          ));
+
+                      if (navigatorResult != null) {
+                        createFile(navigatorResult);
+                      }
+
+                      // // ignore: use_build_context_synchronously
+                      // changeScreen(
+                      //     context,
+                      //     TextEditor(
+                      //       textFileModel: textFileModel,
+                      //       toInsert: navigatorResult,
+                      //     ));
+                    }
+                  } on PlatformException {
+                    print(PlatformException);
+                  }
+                },
+                child: const Icon(Icons.image),
               )), //button first
 
           Container(
-              margin: EdgeInsets.all(10),
+              margin: const EdgeInsets.all(10),
               child: FloatingActionButton(
                 heroTag: "btn2",
-                onPressed: () async => createFile(),
-                child: Icon(Icons.add),
+                onPressed: () async => createFile(""),
+                child: const Icon(Icons.add),
               )), // button second
         ],
       ),
