@@ -81,18 +81,18 @@ class _TextEditorState extends State<TextEditor> {
           builder: (context) => AlertDialog(
                 title: Text("Save changes"),
                 content:
-                    Text("Want to save changes to ${titleController.value}"),
+                    Text("Want to save changes to ${titleController.text}"),
                 actions: [
                   TextButton(
                       onPressed: () async {
                         await updateContent(fileProvider);
-                        Navigator.pop(context);
+                        popScreen(context);
                         popScreen(context);
                       },
                       child: const Text("Yes")),
                   TextButton(
                       onPressed: () {
-                        Navigator.pop(context);
+                        popScreen(context);
                         popScreen(context);
                       },
                       child: const Text("No")),
