@@ -1,6 +1,7 @@
 // ignore_for_file: import_of_legacy_library_into_null_safe
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:document_scanner_flutter/configs/configs.dart';
@@ -9,9 +10,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:handwriting_recognizer/common/colors.dart';
+import 'package:handwriting_recognizer/data/model/pdf_file.dart';
 import 'package:handwriting_recognizer/data/model/text_file.dart';
-import 'package:handwriting_recognizer/pages/scanner.dart';
+import 'package:handwriting_recognizer/screens/pdf_viewer.dart';
+import 'package:handwriting_recognizer/screens/scanner.dart';
+import 'package:markdown/markdown.dart' as md;
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_html_to_pdf/flutter_html_to_pdf.dart';
+import 'package:quill_markdown/quill_markdown.dart';
 
 import '../common/changeScreen.dart';
 import '../provider/appprovider.dart';
@@ -51,11 +58,37 @@ class _TextEditorState extends State<TextEditor> {
   late quill.Document quillDoc;
   late TextEditingController titleController;
   late quill.QuillController _controller;
+  late TextEditingController dialogBoxController;
 
   @override
   void dispose() {
     super.dispose();
     titleController.dispose();
+  }
+
+  createPdf(Fileprovider fileProvider, AppProvider appProvider) async {
+    try {
+      var content = quillToMarkdown(jsonEncode(quillDoc.toDelta()));
+      // print(content);
+      var html = md.markdownToHtml(content!);
+      Directory? dir = await getExternalStorageDirectory();
+      var pdfFile = dialogBoxController.text;
+      var pdf = await FlutterHtmlToPdf.convertFromHtmlContent(
+          html, dir!.path, pdfFile);
+      PdfFileModel pdfFileModel = PdfFileModel(
+          name: pdfFile,
+          path: pdf.path,
+          createdAt: DateTime.now().microsecondsSinceEpoch);
+      appProvider.changeIsLoading();
+      await fileProvider.savePdf(pdfFileModel);
+      await fileProvider.reloadPdfFiles();
+      appProvider.changeIsLoading();
+      // ignore: use_build_context_synchronously
+      changeScreen(context, PdfViewerPage(fileModel: pdfFileModel));
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
+    }
   }
 
   Future<void> updateContent(Fileprovider fileProvider) async {
@@ -117,6 +150,48 @@ class _TextEditorState extends State<TextEditor> {
               ));
     }
 
+    void showPdfDialogBox() {
+      dialogBoxController = TextEditingController(text: titleController.text);
+      showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+                title: TextField(
+                  controller: dialogBoxController,
+                  decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: orange))),
+                  // onChanged: (value) async {
+                  //   print(value);
+                  //   appProvider.changeIsLoading();
+                  //   await updateTitle(fileProvider, value);
+                  //   appProvider.changeIsLoading();
+                  // },
+                  // onSubmitted: (value) => updateTitle(fileProvider, value),
+                ),
+                actions: [
+                  IconButton(
+                      onPressed: () {
+                        popScreen(context);
+                      },
+                      hoverColor: red,
+                      icon: const Icon(
+                        Icons.close,
+                      )),
+                  IconButton(
+                      onPressed: () async {
+                        createPdf(fileProvider, appProvider);
+                        // ignore: use_build_context_synchronously
+                        popScreen(context);
+                      },
+                      hoverColor: greenAccent,
+                      icon: const Icon(
+                        Icons.done,
+                      ))
+                ],
+              ));
+    }
+
     showDialogBox() {
       showDialog(
           context: context,
@@ -166,11 +241,11 @@ class _TextEditorState extends State<TextEditor> {
                 Padding(
                   padding: const EdgeInsets.all(10.0),
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      updateContent(fileProvider);
+                    onPressed: () async {
+                      showPdfDialogBox();
                     },
                     icon: const Icon(
-                      Icons.lock,
+                      Icons.share,
                       size: 16,
                     ),
                     label: const Text('Share'),

@@ -2,16 +2,17 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:handwriting_recognizer/data/model/text_file.dart';
-import 'package:handwriting_recognizer/pages/text_editor.dart';
+import 'package:handwriting_recognizer/screens/text_editor.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
 
 class ScannerPage extends StatefulWidget {
-  const ScannerPage(
-      {super.key,
-      required this.image,
-     });
+  const ScannerPage({
+    super.key,
+    required this.image,
+  });
 
   final File image;
 
@@ -80,8 +81,12 @@ class _ScannerPageState extends State<ScannerPage> {
                 onPressed: () async {
                   // changeBase64();
                   String result = await byteStream();
+                  final textRecognizer =
+                      TextRecognizer(script: TextRecognitionScript.latin);
+                  final RecognizedText recognizedText = await textRecognizer
+                      .processImage(InputImage.fromFile(widget.image));
                   print(result);
-                  Navigator.pop(context, result);
+                  Navigator.pop(context, recognizedText.text);
                 },
                 icon: const Icon(
                   Icons.arrow_forward,

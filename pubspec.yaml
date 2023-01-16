@@ -43,8 +43,12 @@ dependencies:
   provider: ^6.0.3
   sembast: ^3.3.1
   delta_markdown: ^0.8.0
-  sizer: ^2.0.15
   quill_markdown: ^0.1.0
+  markdown: ^6.0.1
+  flutter_html_to_pdf: ^0.7.0
+  google_mlkit_text_recognition: ^0.5.0
+  syncfusion_flutter_pdfviewer: ^20.4.43
+  flutter_pdfview: ^1.2.5
 
 dev_dependencies:
   flutter_lints: ^2.0.0

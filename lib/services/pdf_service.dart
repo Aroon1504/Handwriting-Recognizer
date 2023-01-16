@@ -2,13 +2,13 @@ import 'dart:io';
 
 import 'package:sembast/sembast.dart';
 import '../data/app_database.dart';
-import '../data/model/text_file.dart';
+import '../data/model/pdf_file.dart';
 
-class FileServices {
+class PdfServices {
   // ignore: constant_identifier_names
-  static const String TEXTFILE_STORE_NAME = 'textfile';
+  static const String PDFFILE_STORE_NAME = 'pdffile';
   // This Store acts like a persistent map, value of which are textfile objects converted to map.
-  final _textFileStore = intMapStoreFactory.store(TEXTFILE_STORE_NAME);
+  final _pdfFileStore = intMapStoreFactory.store(PDFFILE_STORE_NAME);
 
   // Private getter to shorten the amount of needed to get the
   // singleton instance of an opened database.
@@ -16,62 +16,60 @@ class FileServices {
   Future<Database> get _db async => await AppDatabase.instance.database;
 
   // inserting new object
-  Future insert(TextFileModel textFileModel) async {
-    await _textFileStore.add(await _db, textFileModel.toMap());
+  Future insert(PdfFileModel pdfFileModel) async {
+    await _pdfFileStore.add(await _db, pdfFileModel.toMap());
   }
 
   // updating object
-  Future update(TextFileModel textFileModel) async {
+  Future update(PdfFileModel pdfFileModel) async {
     // For filtering by key (ID), RegEx, greater then, and many other criteria,
     // we use a Finder.
-    final finder = Finder(filter: Filter.byKey(textFileModel.id));
-    await _textFileStore.update(await _db, textFileModel.toMap(),
-        finder: finder);
+    final finder = Finder(filter: Filter.byKey(pdfFileModel.id));
+    await _pdfFileStore.update(await _db, pdfFileModel.toMap(), finder: finder);
   }
 
   // Deleting object
-  Future delete(TextFileModel textFileModel) async {
+  Future delete(PdfFileModel pdfFileModel) async {
+    File file = File(pdfFileModel.path);
+    await file.delete();
     // For filtering by key (ID), RegEx, greater then, and many other criteria,
     // we use a Finder.
-    File file = File(textFileModel.path);
-    await file.delete();
-    final finder = Finder(filter: Filter.byKey(textFileModel.id));
-    await _textFileStore.delete(await _db, finder: finder);
+    final finder = Finder(filter: Filter.byKey(pdfFileModel.id));
+    await _pdfFileStore.delete(await _db, finder: finder);
   }
 
-  Future<List<TextFileModel>> getTextFiles() async {
+  Future<List<PdfFileModel>> getPdfFiles() async {
     final finder = Finder(sortOrders: [
       SortOrder('createdAt', false),
     ]);
 
-    final recordSnapshot = await _textFileStore.find(await _db, finder: finder);
+    final recordSnapshot = await _pdfFileStore.find(await _db, finder: finder);
 
     // Making a List<TextFile> out of List<RecordSnapshot>
     return recordSnapshot.map((snapshot) {
-      final textFile = TextFileModel.fromMap(snapshot.value);
+      final pdfFile = PdfFileModel.fromMap(snapshot.value);
 
       //  An ID is a key of a record from the database.
-      textFile.id = snapshot.key;
-      return textFile;
+      pdfFile.id = snapshot.key;
+      return pdfFile;
     }).toList();
   }
 
   // Searching file
-  Future<List<TextFileModel>> searchTextFiles(
-      {required String filename}) async {
+  Future<List<PdfFileModel>> searchPdfFiles({required String filename}) async {
     final finder = Finder(filter: Filter.equals('name', filename), sortOrders: [
       SortOrder('createdAt', false),
     ]);
 
-    final recordSnapshot = await _textFileStore.find(await _db, finder: finder);
+    final recordSnapshot = await _pdfFileStore.find(await _db, finder: finder);
 
     // Making a List<TextFile> out of List<RecordSnapshot>
     return recordSnapshot.map((snapshot) {
-      final textFile = TextFileModel.fromMap(snapshot.value);
+      final pdfFile = PdfFileModel.fromMap(snapshot.value);
 
       //  An ID is a key of a record from the database.
-      textFile.id = snapshot.key;
-      return textFile;
+      pdfFile.id = snapshot.key;
+      return pdfFile;
     }).toList();
   }
 }
