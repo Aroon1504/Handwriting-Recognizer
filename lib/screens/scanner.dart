@@ -1,9 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:handwriting_recognizer/data/model/text_file.dart';
-import 'package:handwriting_recognizer/screens/text_editor.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:handwriting_recognizer/common/changeScreen.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
@@ -26,6 +24,8 @@ class _ScannerPageState extends State<ScannerPage> {
     super.dispose();
   }
 
+  bool uploading = false;
+
   changeBase64() async {
     Uint8List imageBytes = await widget.image.readAsBytes();
     if (kDebugMode) {
@@ -37,8 +37,12 @@ class _ScannerPageState extends State<ScannerPage> {
     }
   }
 
+  // Stream<List<int>> funcStream() async* {
+  //   yield ;
+  // }
+
   Future<String> byteStream() async {
-    var uri = Uri.parse('http://192.168.1.9:5000/detecttxt');
+    var uri = Uri.parse('http://192.168.104.104:5000/detecttxt');
     var request = http.MultipartRequest("POST", uri);
     Map<String, String> headers = {"Content-type": "multipart/form-data"};
     request.files.add(
@@ -54,7 +58,19 @@ class _ScannerPageState extends State<ScannerPage> {
     if (kDebugMode) {
       print("request: $request");
     }
-    var res = await request.send();
+
+    var res = await request.send().timeout(
+      const Duration(seconds: 20),
+      onTimeout: () {
+        // Time has run out, do what you wanted to do.
+        return http.StreamedResponse(
+            http.ByteStream.fromBytes(utf8.encode(jsonEncode('error'))), 503);
+      },
+    );
+    if (res.statusCode == 503) {
+      // ignore: use_build_context_synchronously
+      throw Exception('Error 503: Unable to process your request');
+    }
 
     String response = jsonDecode(await res.stream.bytesToString());
     if (kDebugMode) {
@@ -77,23 +93,43 @@ class _ScannerPageState extends State<ScannerPage> {
             children: [
               Image.file(widget.image),
               // Image.memory(base64Decode()),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  // changeBase64();
-                  String result = await byteStream();
-                  final textRecognizer =
-                      TextRecognizer(script: TextRecognitionScript.latin);
-                  final RecognizedText recognizedText = await textRecognizer
-                      .processImage(InputImage.fromFile(widget.image));
-                  print(result);
-                  Navigator.pop(context, recognizedText.text);
-                },
-                icon: const Icon(
-                  Icons.arrow_forward,
-                  size: 24.0,
-                ),
-                label: const Text('Detect Text'), // <-- Text
+              SizedBox(
+                height: 10,
               ),
+              uploading
+                  ? CircularProgressIndicator()
+                  : ElevatedButton.icon(
+                      onPressed: () async {
+                        setState(() {
+                          uploading = true;
+                        });
+
+                        try {
+                          // changeBase64();
+                          String result = await byteStream();
+                          // final textRecognizer =
+                          //     TextRecognizer(script: TextRecognitionScript.latin);
+                          // final RecognizedText recognizedText = await textRecognizer
+                          //     .processImage(InputImage.fromFile(widget.image));
+                          // print(result);
+
+                          // String recognizedText =
+                          //     await FlutterTesseractOcr.extractText(
+                          //         widget.image.path);
+                          // ignore: use_build_context_synchronously
+                          Navigator.pop(context, result);
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(e.toString())));
+                          popScreen(context);
+                        }
+                      },
+                      icon: const Icon(
+                        Icons.arrow_forward,
+                        size: 24.0,
+                      ),
+                      label: const Text('Detect Text'), // <-- Text
+                    ),
             ],
           ),
         ));
